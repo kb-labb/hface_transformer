@@ -33,23 +33,24 @@ def tokenizer_trainer(text,
                       batch_size: int = 50) -> None:
     # Supply either path to txt file or list of strings as text arg
 
-    tokenizer = Tokenizer(models.BPE(unk_token=UNK))
+    tokenizer = Tokenizer(models.WordPiece(unk_token=UNK))
 
     tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
-        pre_tokenizers.ByteLevel(add_prefix_space=add_prefix_space),
+        # pre_tokenizers.ByteLevel(add_prefix_space=add_prefix_space),
         pre_tokenizers.Whitespace(),
         # pre_tokenizers.Punctuation(),  # already done by Whitespace ?!
         pre_tokenizers.Digits(individual_digits=True),
     ])
     tokenizer.normalizer = normalizers.Sequence([
-        normalizers.Nmt(),
-        normalizers.NFKC(),
+        # normalizers.Nmt(),
+        # normalizers.NFKC(),
+        normalizers.NFD(),
         normalizers.Replace(Regex(" {2,}"), " "),
     ])
 
-    tokenizer.decoder = decoders.BPEDecoder()
+    tokenizer.decoder = decoders.WordPiece()
 
-    trainer = trainers.BpeTrainer(
+    trainer = trainers.WordPieceTrainer(
         vocab_size=vocab_size,
         special_tokens=[UNK, MASK, BOS, EOS],
         min_frequency=min_frequency,
