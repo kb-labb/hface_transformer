@@ -16,6 +16,7 @@ BOS = "[CLS]"
 EOS = "[SEQ]"
 MASK = "[MASK]"
 UNK = "[UNK]"
+replacement = "▁"
 
 
 def batch_iterator(dataset: Dataset, dataset_size: int,
@@ -33,28 +34,41 @@ def tokenizer_trainer(text,
                       batch_size: int = 50) -> None:
     # Supply either path to txt file or list of strings as text arg
 
-    tokenizer = Tokenizer(models.WordPiece(unk_token=UNK))
+    # tokenizer = Tokenizer(models.WordPiece(unk_token=UNK))
+    tokenizer = Tokenizer(models.Unigram())
 
     tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
         # pre_tokenizers.ByteLevel(add_prefix_space=add_prefix_space),
-        pre_tokenizers.Whitespace(),
-        # pre_tokenizers.Punctuation(),  # already done by Whitespace ?!
+        pre_tokenizers.Metaspace(replacement=replacement, add_prefix_space=add_prefix_space),
+        pre_tokenizers.WhitespaceSplit(),  # does not split on punctuation
+        pre_tokenizers.Split(Regex("\d"), behavior="merged_with_previous"),
+        pre_tokenizers.Punctuation(),
         pre_tokenizers.Digits(individual_digits=True),
     ])
     tokenizer.normalizer = normalizers.Sequence([
-        # normalizers.Nmt(),
-        # normalizers.NFKC(),
-        normalizers.NFD(),
+        normalizers.Nmt(),
+        normalizers.NFKC(),
+        # normalizers.NFD(),
         normalizers.Replace(Regex(" {2,}"), " "),
     ])
 
-    tokenizer.decoder = decoders.WordPiece()
+    # tokenizer.decoder = decoders.WordPiece()
+    tokenizer.decoder = decoders.Metaspace()
 
-    trainer = trainers.WordPieceTrainer(
+    trainer = trainers.UnigramTrainer(
         vocab_size=vocab_size,
         special_tokens=[UNK, MASK, BOS, EOS],
         min_frequency=min_frequency,
+        unk_token=UNK,
+        shrinking_factor=0.75,  # 0.75
+        max_piece_length=16,  # 16
+        n_sub_iterations=2,  # 2
     )
+    # trainer = trainers.WordPieceTrainer(
+    #     vocab_size=vocab_size,
+    #     special_tokens=[UNK, MASK, BOS, EOS],
+    #     min_frequency=min_frequency,
+    # )
 
     if isinstance(text, str):
         # if user specified path to txt file as string
