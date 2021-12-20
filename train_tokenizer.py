@@ -17,6 +17,7 @@ EOS = "[SEQ]"
 MASK = "[MASK]"
 UNK = "[UNK]"
 replacement = "▁"
+TOKENIZER_TYPES = ["unigram", "wordpiece", "bpe"]
 
 
 def batch_iterator(dataset: Dataset, dataset_size: int,
@@ -27,6 +28,7 @@ def batch_iterator(dataset: Dataset, dataset_size: int,
 
 # https://github.com/huggingface/tokenizers/issues/640#issuecomment-792305076
 def tokenizer_trainer(text,
+                      tok_type: str,
                       vocab_size: int,
                       tokenizer_file: str = "tokenizer.json",
                       min_frequency: int = 0,
@@ -34,41 +36,74 @@ def tokenizer_trainer(text,
                       batch_size: int = 50) -> None:
     # Supply either path to txt file or list of strings as text arg
 
-    # tokenizer = Tokenizer(models.WordPiece(unk_token=UNK))
-    tokenizer = Tokenizer(models.Unigram())
+    assert tok_type in TOKENIZER_TYPES
 
-    tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
-        # pre_tokenizers.ByteLevel(add_prefix_space=add_prefix_space),
-        pre_tokenizers.Metaspace(replacement=replacement, add_prefix_space=add_prefix_space),
-        pre_tokenizers.WhitespaceSplit(),  # does not split on punctuation
-        pre_tokenizers.Split(Regex("\d"), behavior="merged_with_previous"),
-        pre_tokenizers.Punctuation(),
-        pre_tokenizers.Digits(individual_digits=True),
-    ])
+    # tokenizer = Tokenizer(models.WordPiece(unk_token=UNK))
+    if tok_type == "unigram":
+        tokenizer = Tokenizer(models.Unigram())
+
+        tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
+            pre_tokenizers.Metaspace(replacement=replacement,
+                                     add_prefix_space=add_prefix_space),
+            pre_tokenizers.WhitespaceSplit(),  # does not split on punctuation
+            pre_tokenizers.Split(Regex("\d"), behavior="merged_with_previous"),
+            pre_tokenizers.Punctuation(),
+        ])
+
+        tokenizer.decoder = decoders.Metaspace()
+
+        trainer = trainers.UnigramTrainer(
+            vocab_size=vocab_size,
+            special_tokens=[UNK, MASK, BOS, EOS],
+            min_frequency=min_frequency,
+            unk_token=UNK,
+            shrinking_factor=0.75,  # 0.75
+            max_piece_length=16,  # 16
+            n_sub_iterations=2,  # 2
+        )
+
+    elif tok_type == "wordpiece":
+        tokenizer = Tokenizer(models.WordPiece())
+
+        tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
+            pre_tokenizers.WhitespaceSplit(),  # does not split on punctuation
+            pre_tokenizers.Split(Regex("\d"), behavior="merged_with_previous"),
+            pre_tokenizers.Punctuation(),
+        ])
+
+        tokenizer.decoder = decoders.WordPiece()
+
+        trainer = trainers.WordPieceTrainer(
+            vocab_size=vocab_size,
+            special_tokens=[UNK, MASK, BOS, EOS],
+            min_frequency=min_frequency,
+            unk_token=UNK,
+        )
+
+    if tok_type == "bpe":
+        tokenizer = Tokenizer(models.BPE())
+
+        tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
+            pre_tokenizers.ByteLevel(add_prefix_space=add_prefix_space),
+            pre_tokenizers.WhitespaceSplit(),  # does not split on punctuation
+            pre_tokenizers.Split(Regex("\d"), behavior="merged_with_previous"),
+            pre_tokenizers.Punctuation(),
+            pre_tokenizers.Digits(individual_digits=True),
+        ])
+        tokenizer.decoder = decoders.ByteLevel()
+
+        trainer = trainers.BpeTrainer(
+            vocab_size=vocab_size,
+            special_tokens=[UNK, MASK, BOS, EOS],
+            min_frequency=min_frequency,
+        )
+
     tokenizer.normalizer = normalizers.Sequence([
         normalizers.Nmt(),
         normalizers.NFKC(),
         # normalizers.NFD(),
         normalizers.Replace(Regex(" {2,}"), " "),
     ])
-
-    # tokenizer.decoder = decoders.WordPiece()
-    tokenizer.decoder = decoders.Metaspace()
-
-    trainer = trainers.UnigramTrainer(
-        vocab_size=vocab_size,
-        special_tokens=[UNK, MASK, BOS, EOS],
-        min_frequency=min_frequency,
-        unk_token=UNK,
-        shrinking_factor=0.75,  # 0.75
-        max_piece_length=16,  # 16
-        n_sub_iterations=2,  # 2
-    )
-    # trainer = trainers.WordPieceTrainer(
-    #     vocab_size=vocab_size,
-    #     special_tokens=[UNK, MASK, BOS, EOS],
-    #     min_frequency=min_frequency,
-    # )
 
     if isinstance(text, str):
         # if user specified path to txt file as string
@@ -100,6 +135,9 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("--min_frequency", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=50)
     parser.add_argument("--add_prefix_space", action="store_true")
+    parser.add_argument("--tok_type",
+                        choices=["bpe", "wordpiece", "unigram"],
+                        default="wordpiece")
 
     return parser.parse_args()
 
@@ -115,6 +153,7 @@ if __name__ == "__main__":
     dataset = concatenate_datasets(
         [dataset[str(i)] for i, _ in enumerate(args.infiles)])
     tokenizer_trainer(text=dataset,
+                      tok_type=args.tok_type,
                       vocab_size=args.vocab_size,
                       tokenizer_file=args.tokenizer_name,
                       min_frequency=args.min_frequency,
