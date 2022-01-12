@@ -88,7 +88,6 @@ def tokenizer_trainer(text,
             pre_tokenizers.WhitespaceSplit(),  # does not split on punctuation
             pre_tokenizers.Split(Regex("\d"), behavior="merged_with_previous"),
             pre_tokenizers.Punctuation(),
-            pre_tokenizers.Digits(individual_digits=True),
         ])
         tokenizer.decoder = decoders.ByteLevel()
 
