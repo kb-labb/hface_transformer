@@ -1,0 +1,8 @@
+{
+    "tokenizer_name": "oscar+wiki.64k.wordpiece.tokenizer.json",
+    "train_file": "paula.md",
+    "validation_split_percentage": 0.2,
+    "max_seq_length": 12,
+    "output_dir": "robin_output",
+    "tokenized_and_grouped_data": "data/tok_group_data"
+}
