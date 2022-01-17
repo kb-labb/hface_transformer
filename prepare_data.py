@@ -111,7 +111,7 @@ def main():
                                       data_args.validation_split_percentage)
 
     with training_args.main_process_first(desc="dataset map tokenization"):
-        tokenizer = load_tokenizer(model_args.tokenizer_name,
+        tokenizer = load_tokenizer(model_args.tokenizer_path,
                                    "[UNK]", "[MASK]", "[PAD]", "[CLS]",
                                    "[SEP]")
         tok_fun = lambda x: tokenize_function(x,

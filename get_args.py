@@ -39,6 +39,9 @@ class ModelArguments:
     tokenizer_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"}
     )
+    tokenizer_path: Optional[str] = field(
+        default=None, metadata={"help": "Pretrained tokenizer path"}
+    )
     cache_dir: Optional[str] = field(
         default=None,
         metadata={
