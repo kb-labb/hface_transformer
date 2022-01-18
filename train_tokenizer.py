@@ -12,8 +12,9 @@ from tokenizers import (
     Regex,
 )
 
+PAD = "[PAD]"
 BOS = "[CLS]"
-EOS = "[SEQ]"
+EOS = "[SEP]"
 MASK = "[MASK]"
 UNK = "[UNK]"
 replacement = "▁"
@@ -54,7 +55,7 @@ def tokenizer_trainer(text,
 
         trainer = trainers.UnigramTrainer(
             vocab_size=vocab_size,
-            special_tokens=[UNK, MASK, BOS, EOS],
+            special_tokens=[PAD, UNK, MASK, BOS, EOS],
             min_frequency=min_frequency,
             unk_token=UNK,
             shrinking_factor=0.75,  # 0.75
@@ -75,7 +76,7 @@ def tokenizer_trainer(text,
 
         trainer = trainers.WordPieceTrainer(
             vocab_size=vocab_size,
-            special_tokens=[UNK, MASK, BOS, EOS],
+            special_tokens=[PAD, UNK, MASK, BOS, EOS],
             min_frequency=min_frequency,
             unk_token=UNK,
         )
@@ -93,7 +94,7 @@ def tokenizer_trainer(text,
 
         trainer = trainers.BpeTrainer(
             vocab_size=vocab_size,
-            special_tokens=[UNK, MASK, BOS, EOS],
+            special_tokens=[PAD, UNK, MASK, BOS, EOS],
             min_frequency=min_frequency,
         )
 

@@ -13,8 +13,9 @@ from transformers import HfArgumentParser, TrainingArguments
 
 
 def load_doc_per_line_data(path):
-    dataset = load_dataset("text", data_files={"_": path})
-    dataset = dataset["_"]
+    name = path.split("/")[-1]
+    dataset = load_dataset("text", data_files={name: path})
+    dataset = dataset[name]
     return dataset
 
 
@@ -109,6 +110,7 @@ def main():
     with training_args.main_process_first(desc="train-val-test split"):
         raw_dataset = train_val_split(raw_dataset,
                                       data_args.validation_split_percentage)
+        # raw_dataset.save_to_disk("data/train_val_test_split")
 
     with training_args.main_process_first(desc="dataset map tokenization"):
         tokenizer = load_tokenizer(model_args.tokenizer_path,
@@ -118,8 +120,7 @@ def main():
                                               tokenizer,
                                               "text",
                                               padding=True,
-                                              max_seq_length=data_args.
-                                              max_seq_length)
+                                              max_seq_length=data_args.max_seq_length)
         tokenized_datasets = raw_dataset.map(
             tok_fun,
             batched=True,
@@ -128,6 +129,7 @@ def main():
             load_from_cache_file=not data_args.overwrite_cache,
             desc="Running tokenizer on every text in dataset",
         )
+        # tokenized_datasets.save_to_disk("data/tokenized")
 
     # Note that with `batched=True`, this map processes 1,000 texts together, so group_texts throws away a
     # remainder for each of those groups of 1,000 texts. You can adjust that batch_size here but a higher value
