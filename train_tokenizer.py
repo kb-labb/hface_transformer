@@ -118,8 +118,8 @@ def tokenizer_trainer(text,
         single=f"{BOS} $A {EOS}",
         pair=f"{BOS} $A {EOS} $B:1 {EOS}:1",
         special_tokens=[
-            (f"{BOS}", 1),
-            (f"{EOS}", 2),
+            (f"{BOS}", tokenizer.vocab[BOS]),
+            (f"{EOS}", tokenizer.vocab[EOS]),
         ],
     )
     tokenizer.save(tokenizer_file, pretty=True)
