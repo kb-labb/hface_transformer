@@ -1,7 +1,7 @@
 {
     "tokenizer_path": "oscar+wiki.64k.wordpiece.tokenizer.json",
     "train_file": "/ceph/hpc/home/eurobink/group_space/data/text/all_text.docs",
-    "validation_split_percentage": 0.02,
+    "validation_split_percentage": 2,
     "max_seq_length": 512,
     "preprocessing_num_workers": 4,
     "output_dir": "./hface_model_out",

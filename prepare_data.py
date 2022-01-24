@@ -36,6 +36,8 @@ def tokenize_function(examples,
                       text_column_name,
                       padding,
                       max_seq_length: Optional[int] = None):
+    if max_seq_length is None:
+        max_seq_length = 1024
     return tokenizer(
         [
             line for line in examples[text_column_name]
@@ -71,14 +73,14 @@ def group_texts(examples, max_seq_length):
         ]
         for k, t in concatenated_examples.items()
     }
-    result["labels"] = result["input_ids"].copy()
+    # result["labels"] = result["input_ids"].copy()
     return result
 
 
 def train_val_split(dataset: Dataset,
                     validation_split_percentage: float) -> DatasetDict:
     dataset = dataset.shuffle()
-    val_test_size = int(dataset.num_rows * validation_split_percentage)
+    val_test_size = int(dataset.num_rows * validation_split_percentage/100)
     val = dataset.select(range(0, val_test_size, 1))
     test = dataset.select(range(len(dataset) - val_test_size, len(dataset), 1))
     train = dataset.select(
@@ -106,11 +108,13 @@ def main():
     column_names = ["text"]
     with training_args.main_process_first(desc="load dataset"):
         raw_dataset = load_doc_per_line_data(data_args.train_file)
+    print("Dataset loaded")
 
     with training_args.main_process_first(desc="train-val-test split"):
         raw_dataset = train_val_split(raw_dataset,
                                       data_args.validation_split_percentage)
         # raw_dataset.save_to_disk("data/train_val_test_split")
+    print("Split into train-dev-test")
 
     with training_args.main_process_first(desc="dataset map tokenization"):
         tokenizer = load_tokenizer(model_args.tokenizer_path,
@@ -120,7 +124,7 @@ def main():
                                               tokenizer,
                                               "text",
                                               padding=True,
-                                              max_seq_length=data_args.max_seq_length)
+                                              max_seq_length=None)
         tokenized_datasets = raw_dataset.map(
             tok_fun,
             batched=True,
@@ -129,7 +133,11 @@ def main():
             load_from_cache_file=not data_args.overwrite_cache,
             desc="Running tokenizer on every text in dataset",
         )
-        # tokenized_datasets.save_to_disk("data/tokenized")
+        # filename = data_args.train_file.split("/")[-1]
+        # save_path = os.path.join("data/tokenized", filename)
+        # print(f"Saving tokenized datasets {save_path}")
+        # tokenized_datasets.save_to_disk(save_path)
+    print("Done tokenizing")
 
     # Note that with `batched=True`, this map processes 1,000 texts together, so group_texts throws away a
     # remainder for each of those groups of 1,000 texts. You can adjust that batch_size here but a higher value
@@ -147,7 +155,10 @@ def main():
             load_from_cache_file=not data_args.overwrite_cache,
             desc=f"Grouping texts in chunks of {data_args.max_seq_length}",
         )
-        grouped_datasets.save_to_disk(data_args.tokenized_and_grouped_data)
+        filename = data_args.train_file.split("/")[-1]
+        save_path = os.path.join(data_args.tokenized_and_grouped_data, filename)
+        print(f"Saving grouped datasets {save_path}")
+        grouped_datasets.save_to_disk(save_path)
 
 
 if __name__ == "__main__":
