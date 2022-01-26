@@ -25,7 +25,7 @@ echo "SLURM_PROCID" $SLURM_PROCID
     --max_seq_length 512 \
     --preprocessing_num_workers $SLURM_CPUS_PER_TASK \
     --output_dir ./hface_model_out \
-    --tokenized_and_grouped_data ./data/tok_and_group_data \
+    --tokenized_and_grouped_data ./data/not_padded \
     --line_by_line true \
     --config_name model_config.json \
     --model_type bert \
@@ -37,7 +37,9 @@ echo "SLURM_PROCID" $SLURM_PROCID
     --fp16 false \
     --per_device_train_batch_size 64 \
     --per_device_eval_batch_size 64 \
-    --gradient_accumulation_steps 16
+    --gradient_accumulation_steps 16 \
+    --no_cuda \
+    --xpu_backend mpi 
     "
     # --max_train_samples null \
     # --max_eval_samples null \

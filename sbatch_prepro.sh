@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --partition=cpu
 #SBATCH --job-name=hface_prepro
-#SBATCH --mem=4G
+#SBATCH --mem=240G
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --time=0-04:00:00
+#SBATCH --cpus-per-task=128
+#SBATCH --time=0-14:00:00
 #SBATCH --output=logs/sbatch.log
 
 # REMEMBER TO CHANGE: --mem, --gres, --gpus-per-node, --time

@@ -36,8 +36,8 @@ def tokenize_function(examples,
                       text_column_name,
                       padding,
                       max_seq_length: Optional[int] = None):
-    if max_seq_length is None:
-        max_seq_length = 1024
+    # if max_seq_length is None:
+    #     max_seq_length = 1024
     return tokenizer(
         [
             line for line in examples[text_column_name]
@@ -123,7 +123,7 @@ def main():
         tok_fun = lambda x: tokenize_function(x,
                                               tokenizer,
                                               "text",
-                                              padding=True,
+                                              padding=False,
                                               max_seq_length=None)
         tokenized_datasets = raw_dataset.map(
             tok_fun,
